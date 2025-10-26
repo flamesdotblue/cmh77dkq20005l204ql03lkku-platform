@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER") // "postgresql" | "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  name              String?
+  email             String   @unique
+  passwordHash      String?
+  plan              String   @default("free")
+  stripeCustomerId  String?
+  createdAt         DateTime @default(now())
+  workspaces        Workspace[] @relation("UserWorkspaces")
+  teams             Team[]
+}
+
+model Workspace {
+  id         String   @id @default(cuid())
+  name       String
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [id], name: "UserWorkspaces")
+  createdAt  DateTime @default(now())
+  notes      Note[]
+  tasks      Task[]
+  widgets    Widget[]
+  teams      Team[]
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  title       String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  title       String
+  status      String   @default("todo")
+  dueDate     DateTime?
+  assignedTo  String?
+}
+
+model Widget {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  type        String
+  config      Json
+  position    Json
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
